@@ -1,0 +1,22 @@
+{
+  "cSpell.words": [
+    "Cupertino",
+    "gstin",
+    "Imei",
+    "razorpay",
+    "RGBO",
+    "Suprsend",
+    "vsync"
+  ],
+  "dart.lineLength": 150,
+  "[dart]": {
+    "editor.rulers": [
+      150
+    ]
+  },
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll": "explicit"
+  },
+  "editor.formatOnSave": true,
+}
