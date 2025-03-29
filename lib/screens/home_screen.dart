@@ -1,5 +1,6 @@
 import 'package:brain_train/constants/app_constants.dart';
 import 'package:brain_train/models/user_model.dart';
+import 'package:brain_train/screens/gemini_test_screen.dart';
 import 'package:brain_train/screens/sms_list_screen.dart';
 import 'package:brain_train/services/auth_service.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +65,18 @@ class HomeScreen extends StatelessWidget {
                   ),
                 );
               },
-              child: const Text('View SMS Messages'),
+              child: const Text('View Messages'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const GeminiTestScreen(),
+                  ),
+                );
+              },
+              child: const Text('Test Gemini AI'),
             ),
           ],
         ),
