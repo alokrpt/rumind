@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "948498489629",
+    "project_id": "brain-train-hicypher",
+    "storage_bucket": "brain-train-hicypher.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:948498489629:android:322c77bd4b697e85a181f4",
+        "android_client_info": {
+          "package_name": "in.hicypher.braintrain.brain_train"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "948498489629-5cmm903njl4nf8uo34iu6mgq988dtj3i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.hicypher.braintrain.brain_train",
+            "certificate_hash": "842f77e8c7513678223e85c5892074cacdf390b1"
+          }
+        },
+        {
+          "client_id": "948498489629-499qn6o6k8tlrbn7l8faail08r0bncul.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDX6VFIUUNAzCrdOkBipHFVuIiWJo_WQjk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "948498489629-499qn6o6k8tlrbn7l8faail08r0bncul.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "948498489629-hn27vgq879b4cahk4htqoum9ham9dh8t.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "in.hicypher.braintrain.brainTrain"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
