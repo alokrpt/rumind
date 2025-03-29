@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:brain_train/services/sms_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
@@ -13,11 +15,19 @@ class SmsExample extends StatefulWidget {
 class _SmsExampleState extends State<SmsExample> {
   final List<SmsMessage> _messages = [];
   bool _isLoading = true;
+  StreamSubscription<List<SmsMessage>>? _subscription;
 
   @override
   void initState() {
     super.initState();
     _initializeSmsService();
+  }
+
+  @override
+  void dispose() {
+    // Cancel the subscription when widget is disposed
+    _subscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _initializeSmsService() async {
@@ -29,7 +39,10 @@ class _SmsExampleState extends State<SmsExample> {
     await smsService.requestPermission();
 
     // Listen for SMS messages
-    smsService.smsStream.listen((messages) {
+    _subscription = smsService.smsStream.listen((messages) {
+      // Check if widget is still mounted
+      if (!mounted) return;
+
       setState(() {
         _messages.clear();
 

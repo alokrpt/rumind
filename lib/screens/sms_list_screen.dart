@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:brain_train/services/sms_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
@@ -15,11 +17,19 @@ class _SmsListScreenState extends State<SmsListScreen> {
   final List<SmsMessage> _messages = [];
   bool _isLoading = true;
   bool _permissionsRequested = false;
+  StreamSubscription<List<SmsMessage>>? _subscription;
 
   @override
   void initState() {
     super.initState();
     _initializeSmsService();
+  }
+
+  @override
+  void dispose() {
+    // Cancel the subscription when widget is disposed
+    _subscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _initializeSmsService() async {
@@ -30,12 +40,14 @@ class _SmsListScreenState extends State<SmsListScreen> {
     await _requestSmsPermissions();
 
     // Listen for new messages
-    smsService.smsStream.listen(_handleSmsUpdate);
+    _subscription = smsService.smsStream.listen(_handleSmsUpdate);
 
-    // Update loading state
-    setState(() {
-      _isLoading = false;
-    });
+    // Update loading state if still mounted
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _requestSmsPermissions() async {
@@ -48,6 +60,9 @@ class _SmsListScreenState extends State<SmsListScreen> {
 
     // Only show dialog if not already granted
     if (!status.isGranted) {
+      // Only show dialog if the widget is still mounted
+      if (!mounted) return;
+
       // Show a permission explanation dialog
       await showDialog(
         context: context,
@@ -66,16 +81,24 @@ class _SmsListScreenState extends State<SmsListScreen> {
         ),
       );
 
+      // Check if still mounted after dialog
+      if (!mounted) return;
+
       // Request actual permission
       final smsService = context.read<SmsService>();
       await smsService.requestPermission();
     }
 
-    // Refresh messages after permissions
-    await _refreshMessages();
+    // Refresh messages after permissions if still mounted
+    if (mounted) {
+      await _refreshMessages();
+    }
   }
 
   void _handleSmsUpdate(List<SmsMessage> messages) {
+    // Only update state if widget is still mounted
+    if (!mounted) return;
+
     setState(() {
       _messages.clear();
 
@@ -92,12 +115,18 @@ class _SmsListScreenState extends State<SmsListScreen> {
   }
 
   Future<void> _refreshMessages() async {
+    // Check if widget is still mounted
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
 
     final smsService = context.read<SmsService>();
     await smsService.refreshMessages();
+
+    // Check again if widget is still mounted
+    if (!mounted) return;
 
     setState(() {
       _isLoading = false;
