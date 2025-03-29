@@ -1,3 +1,4 @@
+import 'package:brain_train/constants/app_constants.dart';
 import 'package:brain_train/services/ai_service.dart';
 import 'package:flutter/material.dart';
 
@@ -16,7 +17,6 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
   bool _isInitialized = false;
   bool _isLoading = false;
   String _response = '';
-  String _apiKey = '';
 
   // Test SMS messages for demonstration
   final List<String> _testSmsMessages = [
@@ -29,7 +29,7 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
   @override
   void initState() {
     super.initState();
-    _checkInitialization();
+    _initializeAiService();
   }
 
   @override
@@ -39,29 +39,22 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
     super.dispose();
   }
 
-  void _checkInitialization() {
-    setState(() {
-      _isInitialized = _aiService.isInitialized;
-    });
-  }
-
   Future<void> _initializeAiService() async {
-    if (_apiKey.isEmpty) {
-      _showSnackBar('Please enter an API key first');
-      return;
-    }
-
     setState(() {
       _isLoading = true;
+      _response = 'Initializing AI service...';
     });
 
     try {
-      await _aiService.initialize(apiKey: _apiKey);
+      await _aiService.initialize(apiKey: AppConstants.geminiApiKey);
       setState(() {
         _isInitialized = true;
-        _response = 'AI Service initialized successfully';
+        _response = 'AI Service initialized successfully with API key from constants';
       });
     } catch (e) {
+      setState(() {
+        _response = 'Error initializing AI Service: $e';
+      });
       _showSnackBar('Error initializing AI Service: $e');
     } finally {
       setState(() {
@@ -72,7 +65,7 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
 
   Future<void> _sendPrompt() async {
     if (!_isInitialized) {
-      _showSnackBar('Please initialize the AI Service first');
+      _showSnackBar('Please wait for the AI Service to initialize');
       return;
     }
 
@@ -103,7 +96,7 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
 
   Future<void> _analyzeSmsMessage() async {
     if (!_isInitialized) {
-      _showSnackBar('Please initialize the AI Service first');
+      _showSnackBar('Please wait for the AI Service to initialize');
       return;
     }
 
@@ -133,7 +126,7 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
 
   Future<void> _categorizeSmsMessages() async {
     if (!_isInitialized) {
-      _showSnackBar('Please initialize the AI Service first');
+      _showSnackBar('Please wait for the AI Service to initialize');
       return;
     }
 
@@ -186,25 +179,6 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!_isInitialized) ...[
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Enter Gemini API Key',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-                onChanged: (value) {
-                  _apiKey = value;
-                },
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _initializeAiService,
-                child: _isLoading ? const CircularProgressIndicator() : const Text('Initialize AI Service'),
-              ),
-              const SizedBox(height: 16),
-              const Divider(),
-            ],
             TextField(
               controller: _promptController,
               decoration: const InputDecoration(
@@ -252,7 +226,14 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 16),
+                          Text(_response.isEmpty ? 'Loading...' : _response),
+                        ],
+                      )
                     : SingleChildScrollView(
                         controller: _scrollController,
                         child: Text(_response),
