@@ -44,6 +44,14 @@ class SmsService {
   Future<void> refreshMessages() async {
     try {
       final messages = await _query.getAllSms;
+
+      // Sort messages by date (latest first)
+      messages.sort((a, b) {
+        final dateA = int.tryParse(a.date?.toString() ?? '0') ?? 0;
+        final dateB = int.tryParse(b.date?.toString() ?? '0') ?? 0;
+        return dateB.compareTo(dateA); // Descending order (newest first)
+      });
+
       _smsStreamController.add(messages);
       debugPrint('Loaded ${messages.length} SMS messages');
     } catch (e) {
@@ -62,6 +70,14 @@ class SmsService {
         kinds: kinds,
         count: count,
       );
+
+      // Sort messages by date (latest first)
+      messages.sort((a, b) {
+        final dateA = int.tryParse(a.date?.toString() ?? '0') ?? 0;
+        final dateB = int.tryParse(b.date?.toString() ?? '0') ?? 0;
+        return dateB.compareTo(dateA); // Descending order (newest first)
+      });
+
       return messages;
     } catch (e) {
       debugPrint('Error getting SMS messages: $e');

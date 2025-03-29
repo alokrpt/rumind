@@ -32,7 +32,16 @@ class _SmsExampleState extends State<SmsExample> {
     smsService.smsStream.listen((messages) {
       setState(() {
         _messages.clear();
-        _messages.addAll(messages);
+
+        // Sort by date (newest first)
+        final sortedMessages = List<SmsMessage>.from(messages);
+        sortedMessages.sort((a, b) {
+          final dateA = int.tryParse(a.date?.toString() ?? '0') ?? 0;
+          final dateB = int.tryParse(b.date?.toString() ?? '0') ?? 0;
+          return dateB.compareTo(dateA);
+        });
+
+        _messages.addAll(sortedMessages);
         _isLoading = false;
       });
     });

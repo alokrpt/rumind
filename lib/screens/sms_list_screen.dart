@@ -78,7 +78,16 @@ class _SmsListScreenState extends State<SmsListScreen> {
   void _handleSmsUpdate(List<SmsMessage> messages) {
     setState(() {
       _messages.clear();
-      _messages.addAll(messages);
+
+      // Sort messages by date (latest first)
+      final sortedMessages = List<SmsMessage>.from(messages);
+      sortedMessages.sort((a, b) {
+        final dateA = int.tryParse(a.date?.toString() ?? '0') ?? 0;
+        final dateB = int.tryParse(b.date?.toString() ?? '0') ?? 0;
+        return dateB.compareTo(dateA); // Descending order (newest first)
+      });
+
+      _messages.addAll(sortedMessages);
     });
   }
 
