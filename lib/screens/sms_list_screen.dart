@@ -171,17 +171,27 @@ class _SmsListScreenState extends State<SmsListScreen> {
   }
 
   void _showFilterDialog() {
+    final theme = Theme.of(context);
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Filter Messages'),
+          title: Text(
+            'Filter Messages',
+            style: TextStyle(
+              color: theme.primaryColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SwitchListTile(
                 title: const Text('Financial Messages Only'),
                 value: _showFinancialOnly,
+                activeColor: theme.primaryColor,
                 onChanged: (value) {
                   setDialogState(() {
                     _showFinancialOnly = value;
@@ -191,8 +201,12 @@ class _SmsListScreenState extends State<SmsListScreen> {
               if (_showFinancialOnly) ...[
                 const SizedBox(height: 16),
                 DropdownButtonFormField<TransactionType?>(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Transaction Type',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   value: _selectedType,
                   items: [
@@ -213,8 +227,12 @@ class _SmsListScreenState extends State<SmsListScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String?>(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Sender',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   value: _selectedSender,
                   items: [
@@ -247,9 +265,14 @@ class _SmsListScreenState extends State<SmsListScreen> {
                 });
                 _refreshMessages();
               },
-              child: const Text('Clear Filters'),
+              child: Text(
+                'CLEAR',
+                style: TextStyle(
+                  color: Colors.grey[700],
+                ),
+              ),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 if (_showFinancialOnly) {
@@ -259,7 +282,11 @@ class _SmsListScreenState extends State<SmsListScreen> {
                 }
                 setState(() {});
               },
-              child: const Text('Apply'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('APPLY'),
             ),
           ],
         ),
@@ -313,16 +340,26 @@ class _SmsListScreenState extends State<SmsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_showFinancialOnly ? 'Financial Messages' : 'SMS Messages'),
+        elevation: 0,
+        backgroundColor: theme.primaryColor,
+        foregroundColor: Colors.white,
+        title: Text(
+          _showFinancialOnly ? 'Financial Messages' : 'SMS Messages',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: const Icon(Icons.filter_list, color: Colors.white),
+            tooltip: 'Filter messages',
             onPressed: _showFilterDialog,
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: 'Refresh messages',
             onPressed: _refreshMessages,
           ),
         ],
@@ -341,107 +378,157 @@ class _SmsListScreenState extends State<SmsListScreen> {
               tooltip: 'View Insights',
               label: const Text('View Insights'),
               icon: const Icon(Icons.insights),
+              backgroundColor: theme.primaryColor,
+              foregroundColor: Colors.white,
             )
           : null,
-      body: _isLoading
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Loading messages...'),
-                ],
-              ),
-            )
-          : _showFinancialOnly
-              ? _financialTransactions.isEmpty
-                  ? _buildEmptyFinancialState()
-                  : _buildFinancialList()
-              : _messages.isEmpty
-                  ? _buildEmptyState()
-                  : _buildMessageList(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.primaryColor.withOpacity(0.1),
+              Colors.white,
+            ],
+          ),
+        ),
+        child: _isLoading
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: theme.primaryColor),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading messages...',
+                      style: TextStyle(
+                        color: theme.primaryColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : _showFinancialOnly
+                ? _financialTransactions.isEmpty
+                    ? _buildEmptyFinancialState()
+                    : _buildFinancialList()
+                : _messages.isEmpty
+                    ? _buildEmptyState()
+                    : _buildMessageList(),
+      ),
     );
   }
 
   Widget _buildEmptyState() {
+    final theme = Theme.of(context);
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.message_outlined,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No SMS messages found',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We couldn\'t find any SMS messages in your inbox',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.refresh),
-            label: const Text('Refresh Messages'),
-            onPressed: _refreshMessages,
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.message_outlined,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No SMS messages found',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'We couldn\'t find any SMS messages in your inbox',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh Messages'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                backgroundColor: theme.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: _refreshMessages,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildEmptyFinancialState() {
+    final theme = Theme.of(context);
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.currency_rupee,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No financial transactions found',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We couldn\'t find any financial messages in your inbox',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.currency_rupee,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No financial transactions found',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'We couldn\'t find any financial messages in your inbox',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Refresh'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    backgroundColor: theme.primaryColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: _refreshMessages,
                 ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.refresh),
-                label: const Text('Refresh'),
-                onPressed: _refreshMessages,
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.message),
-                label: const Text('View All Messages'),
-                onPressed: () {
-                  setState(() {
-                    _showFinancialOnly = false;
-                  });
-                },
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 16),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.message),
+                  label: const Text('View All Messages'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    foregroundColor: theme.primaryColor,
+                    side: BorderSide(color: theme.primaryColor),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _showFinancialOnly = false;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -450,7 +537,7 @@ class _SmsListScreenState extends State<SmsListScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: _messages.length,
-      separatorBuilder: (context, index) => const Divider(),
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final message = _messages[index];
         return _buildMessageCard(message);
@@ -462,7 +549,7 @@ class _SmsListScreenState extends State<SmsListScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: _financialTransactions.length,
-      separatorBuilder: (context, index) => const Divider(),
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final transaction = _financialTransactions[index];
         return _buildTransactionCard(transaction);
@@ -471,19 +558,18 @@ class _SmsListScreenState extends State<SmsListScreen> {
   }
 
   Widget _buildMessageCard(SmsMessage message) {
-    // Format the date more safely
+    final theme = Theme.of(context);
+
+    // Format the date directly from DateTime object
     String formattedDate = 'Unknown';
-    try {
-      if (message.date != null) {
-        final date = (message.date);
-        formattedDate = date != null ? '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}' : 'Unknown';
-      }
-    } catch (e) {
-      debugPrint('Error formatting date: $e');
+    if (message.date != null) {
+      final date = message.date;
+      formattedDate = '${date?.day}/${date?.month}/${date?.year} ${date?.hour}:${date?.minute.toString().padLeft(2, '0')}';
     }
 
     return Card(
       elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -493,26 +579,66 @@ class _SmsListScreenState extends State<SmsListScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  message.address ?? 'Unknown',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                Expanded(
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: theme.primaryColor.withOpacity(0.1),
+                        child: Icon(
+                          Icons.message,
+                          size: 16,
+                          color: theme.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          message.address ?? 'Unknown',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  formattedDate,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              message.body ?? 'No content',
-              style: const TextStyle(fontSize: 14),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[200]!, width: 1),
+              ),
+              child: Text(
+                message.body ?? 'No content',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[800],
+                ),
+              ),
             ),
           ],
         ),
@@ -521,21 +647,21 @@ class _SmsListScreenState extends State<SmsListScreen> {
   }
 
   Widget _buildTransactionCard(FinancialTransaction transaction) {
-    // Format the date safely
+    final theme = Theme.of(context);
+
+    // Format the date directly from the original message's DateTime
     String formattedDate = 'Unknown';
-    try {
-      if (transaction.originalMessage.date != null) {
-        final timestamp = int.tryParse(transaction.originalMessage.date.toString()) ?? 0;
-        final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-        formattedDate = '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-      }
-    } catch (e) {
-      debugPrint('Error formatting date: $e');
+    if (transaction.originalMessage.date != null) {
+      final date = transaction.originalMessage.date;
+      formattedDate = '${date?.day}/${date?.month}/${date?.year} ${date?.hour}:${date?.minute.toString().padLeft(2, '0')}';
     }
 
+    final typeColor = _getTypeColor(transaction.type).withOpacity(0.9);
+
     return Card(
-      elevation: 3,
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 4),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -545,24 +671,40 @@ class _SmsListScreenState extends State<SmsListScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    transaction.originalMessage.address ?? 'Unknown',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: typeColor.withOpacity(0.2),
+                        child: Icon(
+                          _getTransactionIcon(transaction.type),
+                          size: 16,
+                          color: typeColor,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          transaction.originalMessage.address ?? 'Unknown',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getTypeColor(transaction.type),
+                    color: typeColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     _formatTransactionType(transaction.type),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: typeColor,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -571,40 +713,113 @@ class _SmsListScreenState extends State<SmsListScreen> {
               ],
             ),
             if (transaction.amount != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Amount: ₹${transaction.amount}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.currency_rupee,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${transaction.amount}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
             if (transaction.merchant != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Merchant: ${transaction.merchant}',
-                style: const TextStyle(fontSize: 14),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.storefront,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      transaction.merchant!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-            const SizedBox(height: 8),
-            Text(
-              transaction.originalMessage.body ?? 'No content',
-              style: const TextStyle(fontSize: 14),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                transaction.originalMessage.body ?? 'No content',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[800],
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             const SizedBox(height: 8),
-            Text(
-              formattedDate,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  size: 14,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  formattedDate,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  IconData _getTransactionIcon(TransactionType type) {
+    switch (type) {
+      case TransactionType.creditCard:
+        return Icons.credit_card;
+      case TransactionType.debit:
+        return Icons.money_off;
+      case TransactionType.upi:
+        return Icons.mobile_friendly;
+      case TransactionType.recharge:
+        return Icons.phone_android;
+      case TransactionType.statement:
+        return Icons.receipt_long;
+      case TransactionType.balance:
+        return Icons.account_balance_wallet;
+      case TransactionType.other:
+        return Icons.paid;
+    }
   }
 }
