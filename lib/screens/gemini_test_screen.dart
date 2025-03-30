@@ -46,7 +46,13 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
     });
 
     try {
-      await _aiService.initialize(apiKey: AppConstants.geminiApiKey);
+      // Debug the key before initializing
+      final apiKey = AppConstants.geminiApiKey;
+      final keyPreview = apiKey.isEmpty ? 'empty' : '${apiKey.substring(0, min(4, apiKey.length))}...${apiKey.substring(max(0, apiKey.length - 4))}';
+
+      debugPrint('Attempting to initialize with API key: $keyPreview (length: ${apiKey.length})');
+
+      await _aiService.initialize(apiKey: apiKey);
       setState(() {
         _isInitialized = true;
         _response = 'AI Service initialized successfully with API key from constants';
@@ -62,6 +68,12 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
       });
     }
   }
+
+  // Helper method to get max of two integers
+  int max(int a, int b) => a > b ? a : b;
+
+  // Helper method to get min of two integers
+  int min(int a, int b) => a < b ? a : b;
 
   Future<void> _sendPrompt() async {
     if (!_isInitialized) {
@@ -150,6 +162,31 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
     }
   }
 
+  Future<void> _testApiDirectly() async {
+    setState(() {
+      _isLoading = true;
+      _response = 'Testing API key directly using HTTP...';
+    });
+
+    try {
+      final result = await _aiService.testApiKeyDirectly(apiKey: AppConstants.geminiApiKey);
+      setState(() {
+        _response = result
+            ? 'Direct API test successful! The API key works when called directly.'
+            : 'Direct API test failed. The API key does not work with direct HTTP calls either.';
+      });
+    } catch (e) {
+      setState(() {
+        _response = 'Error testing API directly: $e';
+      });
+      _showSnackBar('Error testing API directly: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
@@ -212,7 +249,12 @@ class _GeminiTestScreenState extends State<GeminiTestScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _testApiDirectly,
+              child: const Text('Test API Key Directly'),
+            ),
+            const SizedBox(height: 8),
             const Text(
               'Response:',
               style: TextStyle(fontWeight: FontWeight.bold),

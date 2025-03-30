@@ -3,8 +3,10 @@ import 'package:brain_train/models/user_model.dart';
 import 'package:brain_train/screens/home_screen.dart';
 import 'package:brain_train/screens/login_screen.dart';
 import 'package:brain_train/screens/sms_list_screen.dart';
+import 'package:brain_train/services/ai_service.dart';
 import 'package:brain_train/services/auth_service.dart';
 import 'package:brain_train/services/game_service.dart';
+import 'package:brain_train/services/gemini_service.dart';
 import 'package:brain_train/services/sms_service.dart';
 import 'package:firebase_auth/firebase_auth.dart' if (skipFirebase) '';
 import 'package:firebase_core/firebase_core.dart' if (skipFirebase) '';
@@ -14,7 +16,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 // Set to true to skip Firebase initialization when testing SMS functionality
-const bool skipFirebase = true;
+const bool skipFirebase = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +59,14 @@ class MyApp extends StatelessWidget {
         Provider<SmsService>(
           create: (_) => SmsService(),
           dispose: (_, service) => service.dispose(),
+        ),
+        // Add GeminiService
+        Provider<GeminiService>(
+          create: (_) => GeminiService(),
+        ),
+        // Add AiService
+        Provider<AiService>(
+          create: (_) => AiService.instance,
         ),
       ],
       child: MaterialApp(

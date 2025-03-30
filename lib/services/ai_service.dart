@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
+
+import '../core/config/api_keys.dart';
 
 class AiService {
   static AiService? _instance;
-  final Gemini _gemini = Gemini.instance;
+  GenerativeModel? _model;
   bool _isInitialized = false;
 
   /// Private constructor for singleton pattern
@@ -17,11 +23,26 @@ class AiService {
 
   /// Initialize the AI service with API key
   /// Must be called before using any other methods
-  Future<void> initialize({required String apiKey}) async {
+  Future<void> initialize({String? apiKey}) async {
     if (_isInitialized) return;
 
     try {
-      Gemini.init(apiKey: apiKey);
+      final apiKeyToUse = apiKey ?? ApiKeys.geminiApiKey;
+      final trimmedKey = apiKeyToUse.trim();
+
+      // Debug the API key (first 4 chars only for security)
+      final keyPreview = trimmedKey.isNotEmpty ? '${trimmedKey.substring(0, min(4, trimmedKey.length))}...' : 'empty';
+      debugPrint('Initializing with API key starting with: $keyPreview, length: ${trimmedKey.length}');
+
+      // Validate API key format
+      if (!ApiKeys.isValidGeminiApiKey(trimmedKey)) {
+        debugPrint('WARNING: API key does not match expected format. Should start with "AIzaSy" and be ~39 characters.');
+      }
+
+      _model = GenerativeModel(
+        model: 'gemini-2.0-flash',
+        apiKey: trimmedKey,
+      );
       _isInitialized = true;
       debugPrint('AI Service initialized successfully');
     } catch (e) {
@@ -33,6 +54,14 @@ class AiService {
   /// Check if the service is initialized
   bool get isInitialized => _isInitialized;
 
+  /// Get the model instance, with a check to make sure it's initialized
+  GenerativeModel get _getModel {
+    if (_model == null) {
+      throw Exception('AI Service not initialized. Call initialize() first.');
+    }
+    return _model!;
+  }
+
   /// Send a text prompt to Gemini and get a response
   Future<String?> sendTextPrompt(String prompt) async {
     if (!_isInitialized) {
@@ -40,8 +69,9 @@ class AiService {
     }
 
     try {
-      final response = await _gemini.text(prompt);
-      return response?.output;
+      final content = [Content.text(prompt)];
+      final response = await _getModel.generateContent(content);
+      return response.text;
     } catch (e) {
       debugPrint('Error sending text prompt: $e');
       rethrow;
@@ -49,14 +79,24 @@ class AiService {
   }
 
   /// Send a prompt with parts (text, images, etc.) to Gemini and get a response
-  Future<String?> sendPrompt({required List<Part> parts}) async {
+  Future<String?> sendPrompt({required String text, Uint8List? imageData}) async {
     if (!_isInitialized) {
       throw Exception('AI Service not initialized. Call initialize() first.');
     }
 
     try {
-      final response = await _gemini.prompt(parts: parts);
-      return response?.output;
+      Content content;
+      if (imageData != null) {
+        content = Content.multi([
+          TextPart(text),
+          DataPart('image/jpeg', imageData),
+        ]);
+      } else {
+        content = Content.text(text);
+      }
+
+      final response = await _getModel.generateContent([content]);
+      return response.text;
     } catch (e) {
       debugPrint('Error sending prompt: $e');
       rethrow;
@@ -64,28 +104,54 @@ class AiService {
   }
 
   /// Stream a prompt to Gemini and get responses as they're generated
-  Stream<String?> streamPrompt({required List<Part> parts}) {
+  Stream<String?> streamPrompt({required String text, Uint8List? imageData}) {
     if (!_isInitialized) {
       throw Exception('AI Service not initialized. Call initialize() first.');
     }
 
     try {
-      return _gemini.promptStream(parts: parts).map((response) => response?.output);
+      Content content;
+      if (imageData != null) {
+        content = Content.multi([
+          TextPart(text),
+          DataPart('image/jpeg', imageData),
+        ]);
+      } else {
+        content = Content.text(text);
+      }
+
+      return _getModel.generateContentStream([content]).map((response) => response.text);
     } catch (e) {
       debugPrint('Error streaming prompt: $e');
       rethrow;
     }
   }
 
-  /// Start or continue a chat conversation with Gemini
-  Future<String?> chat(List<Content> conversation) async {
+  /// Chat session for conversations
+  ChatSession? _chatSession;
+
+  /// Start a new chat session
+  void startNewChat() {
     if (!_isInitialized) {
       throw Exception('AI Service not initialized. Call initialize() first.');
     }
 
+    _chatSession = _getModel.startChat();
+  }
+
+  /// Send a message in an existing chat session
+  Future<String?> sendChatMessage(String message) async {
+    if (!_isInitialized) {
+      throw Exception('AI Service not initialized. Call initialize() first.');
+    }
+
+    if (_chatSession == null) {
+      startNewChat();
+    }
+
     try {
-      final response = await _gemini.chat(conversation);
-      return response?.output;
+      final response = await _chatSession!.sendMessage(Content.text(message));
+      return response.text;
     } catch (e) {
       debugPrint('Error in chat: $e');
       rethrow;
@@ -111,8 +177,9 @@ class AiService {
     ''';
 
     try {
-      final response = await _gemini.text(prompt);
-      return response?.output;
+      final content = [Content.text(prompt)];
+      final response = await _getModel.generateContent(content);
+      return response.text;
     } catch (e) {
       debugPrint('Error analyzing SMS message: $e');
       rethrow;
@@ -140,8 +207,9 @@ class AiService {
     ''';
 
     try {
-      final response = await _gemini.text(prompt);
-      return response?.output;
+      final content = [Content.text(prompt)];
+      final response = await _getModel.generateContent(content);
+      return response.text;
     } catch (e) {
       debugPrint('Error categorizing SMS messages: $e');
       rethrow;
@@ -169,11 +237,48 @@ class AiService {
     ''';
 
     try {
-      final response = await _gemini.text(prompt);
-      return response?.output;
+      final content = [Content.text(prompt)];
+      final response = await _getModel.generateContent(content);
+      return response.text;
     } catch (e) {
       debugPrint('Error generating financial insights: $e');
       rethrow;
     }
   }
+
+  /// Test the API key with a direct HTTP request (bypassing the package)
+  Future<bool> testApiKeyDirectly({String? apiKey}) async {
+    final apiKeyToUse = apiKey ?? ApiKeys.geminiApiKey;
+
+    try {
+      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKeyToUse.trim()}';
+
+      final payload = {
+        'contents': [
+          {
+            'parts': [
+              {'text': 'Hello, testing the API key'}
+            ]
+          }
+        ]
+      };
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+
+      debugPrint('Direct API test status code: ${response.statusCode}');
+      debugPrint('Direct API test response: ${response.body.substring(0, min(100, response.body.length))}...');
+
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error testing API key directly: $e');
+      return false;
+    }
+  }
+
+  // Helper function to get the minimum of two integers
+  int min(int a, int b) => a < b ? a : b;
 }

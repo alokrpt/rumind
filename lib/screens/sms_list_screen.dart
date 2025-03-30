@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:brain_train/screens/insights_screen.dart';
 import 'package:brain_train/services/sms_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
@@ -29,6 +30,7 @@ class _SmsListScreenState extends State<SmsListScreen> {
   @override
   void initState() {
     super.initState();
+    _showFinancialOnly = true; // Set to show only financial transactions by default
     _initializeSmsService();
   }
 
@@ -104,19 +106,9 @@ class _SmsListScreenState extends State<SmsListScreen> {
   void _handleSmsUpdate(List<SmsMessage> messages) {
     // Only update state if widget is still mounted
     if (!mounted) return;
-
     setState(() {
       _messages.clear();
-
-      // Sort messages by date (latest first)
-      final sortedMessages = List<SmsMessage>.from(messages);
-      sortedMessages.sort((a, b) {
-        final dateA = int.tryParse(a.date?.toString() ?? '0') ?? 0;
-        final dateB = int.tryParse(b.date?.toString() ?? '0') ?? 0;
-        return dateB.compareTo(dateA); // Descending order (newest first)
-      });
-
-      _messages.addAll(sortedMessages);
+      _messages.addAll(messages);
     });
   }
 
@@ -335,6 +327,22 @@ class _SmsListScreenState extends State<SmsListScreen> {
           ),
         ],
       ),
+      floatingActionButton: _financialTransactions.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => InsightsScreen(
+                      transactions: _financialTransactions,
+                    ),
+                  ),
+                );
+              },
+              tooltip: 'View Insights',
+              label: const Text('View Insights'),
+              icon: const Icon(Icons.insights),
+            )
+          : null,
       body: _isLoading
           ? const Center(
               child: Column(
@@ -467,9 +475,8 @@ class _SmsListScreenState extends State<SmsListScreen> {
     String formattedDate = 'Unknown';
     try {
       if (message.date != null) {
-        final timestamp = int.tryParse(message.date.toString()) ?? 0;
-        final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-        formattedDate = '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+        final date = (message.date);
+        formattedDate = date != null ? '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}' : 'Unknown';
       }
     } catch (e) {
       debugPrint('Error formatting date: $e');

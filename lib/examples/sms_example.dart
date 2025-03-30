@@ -34,11 +34,10 @@ class _SmsExampleState extends State<SmsExample> {
     // Get the SMS service from provider
     final smsService = context.read<SmsService>();
 
-    // Initialize the service and request permissions
+    // Initialize the service
     await smsService.initialize();
-    await smsService.requestPermission();
 
-    // Listen for SMS messages
+    // Listen for SMS messages first
     _subscription = smsService.smsStream.listen((messages) {
       // Check if widget is still mounted
       if (!mounted) return;
@@ -59,8 +58,13 @@ class _SmsExampleState extends State<SmsExample> {
       });
     });
 
-    // Refresh messages to load initial data
-    await smsService.refreshMessages();
+    // Request permissions
+    await smsService.requestPermission();
+
+    // Always explicitly refresh messages after setup
+    if (mounted) {
+      await smsService.refreshMessages();
+    }
   }
 
   @override

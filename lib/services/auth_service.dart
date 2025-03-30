@@ -1,7 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+
+import 'monthly_limit_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -82,7 +85,26 @@ class AuthService {
 
   // Sign out
   Future<void> signOut() async {
-    await _auth.signOut();
+    try {
+      // Clear monthly limit on logout
+      await MonthlyLimitService.clearMonthlyLimit();
+
+      // Sign out from Google if it was used
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      if (await googleSignIn.isSignedIn()) {
+        await googleSignIn.disconnect();
+        await googleSignIn.signOut();
+      }
+
+      // Sign out from Facebook if it was used
+      // await FacebookAuth.instance.logOut(); do not log out from facebook
+
+      // Finally sign out from Firebase
+      await _auth.signOut();
+    } catch (e) {
+      debugPrint('Error during sign out: $e');
+      rethrow;
+    }
   }
 
   // Get current user
