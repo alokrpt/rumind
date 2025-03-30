@@ -158,9 +158,6 @@ class SmsService {
         kinds: kinds,
         count: count,
       );
-      for (var message in messages) {
-        debugPrint('Sender: ${message.address}, Message: ${message.body}');
-      }
       return messages;
     } catch (e) {
       debugPrint('Error getting SMS messages: $e');
