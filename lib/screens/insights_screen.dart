@@ -11,6 +11,49 @@ import 'package:flutter/services.dart';
 
 import '../constants/app_constants.dart';
 
+// Badge widget for pie chart sections
+class CategoryBadgeWidget extends StatelessWidget {
+  final String emoji;
+  final Color color;
+
+  const CategoryBadgeWidget({
+    super.key,
+    required this.emoji,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: 26,
+      width: 26,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: color,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 2,
+            spreadRadius: 0,
+          )
+        ],
+      ),
+      padding: const EdgeInsets.all(2),
+      child: Center(
+        child: Text(
+          emoji,
+          style: const TextStyle(fontSize: 10),
+        ),
+      ),
+    );
+  }
+}
+
 class InsightsScreen extends StatefulWidget {
   final List<FinancialTransaction> transactions;
 
@@ -197,6 +240,7 @@ class _InsightsScreenState extends State<InsightsScreen> with SingleTickerProvid
 
     // Format current month name in the same format used in the data
     final monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final currentMonthName = "${monthNames[currentMonth - 1]}-$currentYear";
     final expectedMonthFormat = "${monthNames[currentMonth - 1]}-$currentYear";
 
     // Find the data for the current month
@@ -213,7 +257,6 @@ class _InsightsScreenState extends State<InsightsScreen> with SingleTickerProvid
     // If current month wasn't found, use the most recent month
     currentMonthData ??= monthlyData.last as Map<String, dynamic>;
 
-    final currentMonthName = currentMonthData['month'] as String;
     final totalSpent = currentMonthData['total_spent'] as num;
 
     // Generate insights based on spending patterns
@@ -1221,13 +1264,14 @@ Help me understand these insights better and answer any questions I have about m
     final currentMonth = now.month;
     final currentYear = now.year;
     final currentMonthName = "${monthNames[currentMonth - 1]}-$currentYear";
+    final expectedMonthFormat = "${monthNames[currentMonth - 1]}-$currentYear";
 
     // Determine which index should show a tooltip by default
     int initialTooltipIndex = -1;
     for (int i = 0; i < sortedMonthlyData.length; i++) {
       final month = sortedMonthlyData[i];
       final monthStr = month['month'] as String;
-      if (monthStr == currentMonthName) {
+      if (monthStr.contains(expectedMonthFormat)) {
         initialTooltipIndex = i;
         break;
       }
@@ -1345,7 +1389,7 @@ Help me understand these insights better and answer any questions I have about m
               ),
               const SizedBox(height: 20),
               SizedBox(
-                height: 250,
+                height: 200,
                 child: Padding(
                   padding: const EdgeInsets.only(right: 16, left: 6, top: 12, bottom: 12),
                   child: StatefulBuilder(
@@ -1709,16 +1753,16 @@ Help me understand these insights better and answer any questions I have about m
 
     // Softer pastel colors with reduced opacity
     final colors = [
-      Colors.blue.withOpacity(0.7),
-      Colors.red.withOpacity(0.7),
-      Colors.green.withOpacity(0.7),
-      Colors.orange.withOpacity(0.7),
-      Colors.purple.withOpacity(0.7),
-      Colors.teal.withOpacity(0.7),
-      Colors.pink.withOpacity(0.7),
-      Colors.amber.withOpacity(0.7),
-      Colors.indigo.withOpacity(0.7),
-      Colors.brown.withOpacity(0.7),
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.amber,
+      Colors.indigo,
+      Colors.brown,
     ];
 
     // Map of category names to emojis
@@ -1787,78 +1831,447 @@ Help me understand these insights better and answer any questions I have about m
       return '📊';
     }
 
+    // Function to create pie chart sections from category data
+    List<PieChartSectionData> getSections(List categoryData, List<Color> colors, String Function(String) getEmoji, int touchedIndex) {
+      return categoryData.asMap().entries.map((entry) {
+        final index = entry.key;
+        final category = entry.value;
+        final color = colors[index % colors.length];
+        final value = (category['percentage'] as num).toDouble();
+
+        // Adjust radius based on touched state
+        final isSelected = touchedIndex == index;
+        final radius = isSelected ? 90.0 : 80.0;
+
+        return PieChartSectionData(
+          color: color.withOpacity(0.8),
+          value: value,
+          title: value >= 10 ? '${value.toStringAsFixed(0)}%' : '',
+          radius: radius,
+          titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white, shadows: [
+            Shadow(
+              color: Colors.black26,
+              blurRadius: 2,
+            )
+          ]),
+          badgeWidget: null, // No badges
+          badgePositionPercentageOffset: 0.8,
+        );
+      }).toList();
+    }
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         child: Column(
-          children: categoryData.asMap().entries.map((entry) {
-            final index = entry.key;
-            final category = entry.value;
-            final color = colors[index % colors.length];
-            final categoryName = category['category'] as String;
-            final categoryEmoji = getCategoryEmoji(categoryName);
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                'Spending Distribution',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 200,
+              child: Row(
+                children: [
+                  // The Pie Chart
+                  Expanded(
+                    flex: 2,
+                    child: StatefulBuilder(
+                      builder: (context, setState) {
+                        // State for tracking touched section
+                        int touchedIndex = -1;
 
-            return Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          categoryEmoji,
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                      ),
+                        return PieChart(
+                          PieChartData(
+                            pieTouchData: PieTouchData(
+                              touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                                setState(() {
+                                  if (!event.isInterestedForInteractions || pieTouchResponse == null || pieTouchResponse.touchedSection == null) {
+                                    touchedIndex = -1;
+                                    return;
+                                  }
+                                  touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                                });
+                              },
+                            ),
+                            sectionsSpace: 2,
+                            centerSpaceRadius: 30,
+                            startDegreeOffset: 270,
+                            sections: getSections(categoryData, colors, getCategoryEmoji, touchedIndex),
+                            borderData: FlBorderData(show: false),
+                          ),
+                          swapAnimationDuration: const Duration(milliseconds: 600),
+                          swapAnimationCurve: Curves.easeInOutCubic,
+                        );
+                      },
                     ),
-                    const SizedBox(width: 12),
+                  ),
+
+                  // Legend for the top 5 categories
+                  if (categoryData.isNotEmpty)
                     Expanded(
+                      flex: 1,
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            categoryName,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            '${(category['percentage'] as num).toStringAsFixed(1)}% of total',
+                          const Text(
+                            'Top Categories',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
                             ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...List.generate(
+                            categoryData.length > 5 ? 5 : categoryData.length,
+                            (index) {
+                              final data = categoryData[index];
+                              final color = colors[index % colors.length];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              data['category'] as String,
+                                              style: const TextStyle(fontSize: 12),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 2),
+                                          Text(
+                                            '${(data['percentage'] as num).toStringAsFixed(0)}%',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
                     ),
-                    Text(
-                      '₹${(category['amount'] as num).toStringAsFixed(2)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
+                ],
+              ),
+            ),
+            // List of all categories with amounts
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                'Category Details',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
                 ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: (category['percentage'] as num).toDouble() / 100,
-                    backgroundColor: color.withOpacity(0.1),
-                    valueColor: AlwaysStoppedAnimation<Color>(color),
-                    minHeight: 8,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: categoryData.length > 5 ? 5 : categoryData.length,
+              itemBuilder: (context, index) {
+                final category = categoryData[index];
+                final color = colors[index % colors.length];
+                final categoryName = category['category'] as String;
+                final categoryEmoji = getCategoryEmoji(categoryName);
+                final percentage = (category['percentage'] as num).toDouble();
+                final amount = (category['amount'] as num).toDouble();
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            categoryEmoji,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    categoryName,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '₹${amount.toStringAsFixed(0)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: percentage / 100,
+                                      minHeight: 6,
+                                      backgroundColor: color.withOpacity(0.1),
+                                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  width: 40,
+                                  child: Text(
+                                    '${percentage.toStringAsFixed(1)}%',
+                                    textAlign: TextAlign.end,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[700],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            if (categoryData.length > 5)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
+                child: TextButton(
+                  onPressed: () {
+                    _showAllCategoriesBottomSheet(categoryData, colors, getCategoryEmoji);
+                  },
+                  child: Text(
+                    'View all categories (${categoryData.length})',
+                    style: TextStyle(color: Theme.of(context).primaryColor),
                   ),
                 ),
-                if (index < categoryData.length - 1) const Divider(height: 24),
-              ],
-            );
-          }).toList(),
+              ),
+          ],
         ),
       ),
+    );
+  }
+
+  void _showAllCategoriesBottomSheet(List categoryData, List<Color> colors, Function getCategoryEmoji) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'All Categories',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'All spending categories by percentage',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      itemCount: categoryData.length,
+                      itemBuilder: (context, index) {
+                        final category = categoryData[index];
+                        final color = colors[index % colors.length];
+                        final categoryName = category['category'] as String;
+                        final categoryEmoji = getCategoryEmoji(categoryName);
+                        final percentage = (category['percentage'] as num).toDouble();
+                        final amount = (category['amount'] as num).toDouble();
+
+                        return Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: color.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        categoryEmoji,
+                                        style: const TextStyle(fontSize: 18),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                categoryName,
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            Text(
+                                              '₹${amount.toStringAsFixed(0)}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              flex: 3,
+                                              child: ClipRRect(
+                                                borderRadius: BorderRadius.circular(4),
+                                                child: LinearProgressIndicator(
+                                                  value: percentage / 100,
+                                                  minHeight: 8,
+                                                  backgroundColor: color.withOpacity(0.1),
+                                                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            SizedBox(
+                                              width: 45,
+                                              child: Text(
+                                                '${percentage.toStringAsFixed(1)}%',
+                                                textAlign: TextAlign.end,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 12,
+                                                  color: Colors.grey[700],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (index == 0)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4),
+                                            child: Text(
+                                              'Highest',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Theme.of(context).primaryColor,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Divider(),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
