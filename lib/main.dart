@@ -3,7 +3,6 @@ import 'package:brain_train/models/user_model.dart';
 import 'package:brain_train/screens/home_screen.dart';
 import 'package:brain_train/screens/login_screen.dart';
 import 'package:brain_train/screens/sms_list_screen.dart';
-import 'package:brain_train/services/ai_service.dart';
 import 'package:brain_train/services/auth_service.dart';
 import 'package:brain_train/services/game_service.dart';
 import 'package:brain_train/services/gemini_service.dart';
@@ -63,10 +62,6 @@ class MyApp extends StatelessWidget {
         // Add GeminiService
         Provider<GeminiService>(
           create: (_) => GeminiService(),
-        ),
-        // Add AiService
-        Provider<AiService>(
-          create: (_) => AiService.instance,
         ),
       ],
       child: MaterialApp(
