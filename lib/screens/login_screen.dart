@@ -34,7 +34,7 @@ class LoginScreen extends StatelessWidget {
                     _buildAppLogo(context),
                     const SizedBox(height: 40),
                     _buildWelcomeText(context),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 180),
                     _buildLoginButton(
                       context,
                       icon: Icons.email_outlined,
@@ -50,38 +50,38 @@ class LoginScreen extends StatelessWidget {
                         }
                       },
                     ),
-                    const SizedBox(height: 16),
-                    _buildLoginButton(
-                      context,
-                      icon: Icons.facebook,
-                      text: 'Sign in with Facebook',
-                      color: Color(0xFF1877F2),
-                      onPressed: () async {
-                        try {
-                          await authService.signInWithFacebook();
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: ${e.toString()}')),
-                          );
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildLoginButton(
-                      context,
-                      icon: Icons.apple,
-                      text: 'Sign in with Apple',
-                      color: Colors.black,
-                      onPressed: () async {
-                        try {
-                          await authService.signInWithApple();
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: ${e.toString()}')),
-                          );
-                        }
-                      },
-                    ),
+                    // const SizedBox(height: 16),
+                    // _buildLoginButton(
+                    //   context,
+                    //   icon: Icons.facebook,
+                    //   text: 'Sign in with Facebook',
+                    //   color: Color(0xFF1877F2),
+                    //   onPressed: () async {
+                    //     try {
+                    //       await authService.signInWithFacebook();
+                    //     } catch (e) {
+                    //       ScaffoldMessenger.of(context).showSnackBar(
+                    //         SnackBar(content: Text('Error: ${e.toString()}')),
+                    //       );
+                    //     }
+                    //   },
+                    // ),
+                    // const SizedBox(height: 16),
+                    // _buildLoginButton(
+                    //   context,
+                    //   icon: Icons.apple,
+                    //   text: 'Sign in with Apple',
+                    //   color: Colors.black,
+                    //   onPressed: () async {
+                    //     try {
+                    //       await authService.signInWithApple();
+                    //     } catch (e) {
+                    //       ScaffoldMessenger.of(context).showSnackBar(
+                    //         SnackBar(content: Text('Error: ${e.toString()}')),
+                    //       );
+                    //     }
+                    //   },
+                    // ),
                     const SizedBox(height: 16),
                     _buildLoginButton(
                       context,
