@@ -40,11 +40,9 @@ Analyzing spending, forecasting bills, and offering personalized recommendations
 
 ### App Demo Video
 
-<video width="600" controls>
-  <source src="assets/showcase/screenrecorder.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-  <a href="assets/showcase/screenrecorder.mp4">Download Demo Video</a>
-</video>
+[![Demo Video](assets/showcase/frame1.png)](assets/showcase/screenrecorder.mp4)
+
+**[📹 Watch Demo Video](assets/showcase/screenrecorder.mp4)**
 
 ## Tech Stack
 
