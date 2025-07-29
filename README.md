@@ -38,6 +38,14 @@ Analyzing spending, forecasting bills, and offering personalized recommendations
 ![Frame 6](assets/showcase/frame6.png)
 ![Frame 7](assets/showcase/frame7.png)
 
+### App Demo Video
+
+<video width="600" controls>
+  <source src="assets/showcase/screenrecorder.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+  <a href="assets/showcase/screenrecorder.mp4">Download Demo Video</a>
+</video>
+
 ## Tech Stack
 
 - **Frontend**: Flutter (iOS & Android)
